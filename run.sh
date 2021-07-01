@@ -101,6 +101,9 @@ function run_emulation()
     timeout --preserve-status --signal SIGINT 300 \
         ./sources/extractor/extractor.py -b $BRAND -sql $PSQL_IP -np -nk $INFILE images \
         2>&1 >/dev/null
+    timeout --preserve-status --signal SIGINT 300 \
+        ./sources/extractor/extractor.py -b $BRAND -sql $PSQL_IP -np -nf $INFILE images \
+        2>&1 >/dev/null
 
     IID=`./scripts/util.py get_iid $INFILE $PSQL_IP`
     if [ ! "${IID}" ]; then
