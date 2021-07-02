@@ -34,8 +34,8 @@ candidate=()
 for f in `find "${WORK_DIR}/image"`
 do
     filetype=`file $f`
-    if [ $filetype == *"ELF"* ];then
-        if `BIN_filter $f`;then
+    if [[ $filetype == *"ELF"* ]]; then
+        if `bin_filter $f`; then
             candidate+=("$f")
         fi
     fi
