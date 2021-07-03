@@ -72,6 +72,24 @@ def db_select(column,iid):
         dbh.close()
         exit
 
+def db_update(column,value,iid):
+    if os.getenv('FIRMSE_DOCKER') == 'true':
+        psql_ip = "172.17.0.1"
+    else:
+        psql_ip = "127.0.0.1"
+
+    dbh = get_db(psql_ip)
+    if dbh:
+        cur = dbh.cursor()
+        cur.execute("update image set {}=%s where id=%s;".format(column),(value,iid))
+        if cur.rowcount == 1:
+            dbh.commit()
+        dbh.close()
+    else:
+        print("fail")
+        dbh.close()
+        exit
+
 def check_connection(psql_ip):
     try:
         dbh = psycopg2.connect(database="firmware",
@@ -104,3 +122,5 @@ if __name__ == '__main__':
         exit(check_connection(psql_ip))
     if sys.argv[1] == 'select':
         db_select(sys.argv[2],sys.argv[3])
+    if sys.argv[1] == 'update':
+        db_update(sys.argv[2],sys.argv[3],sys.argv[4])
