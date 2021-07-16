@@ -85,7 +85,7 @@ if [ -e "${WORK_DIR}/kernelInit" ]; then
   cp "${WORK_DIR}/kernelInit" "${IMAGE_DIR}"
 fi
 cp "${SCRIPT_DIR}/inferFile.sh" "${IMAGE_DIR}"
-FIRMSE_BOOT=${FIRMSE_BOOT} FIRMSE_ETC=${FIRMSE_ETC} chroot "${IMAGE_DIR}" /bash-static /inferFile.sh
+FIRMAE_BOOT=${FIRMAE_BOOT} FIRMAE_ETC=${FIRMAE_ETC} chroot "${IMAGE_DIR}" /bash-static /inferFile.sh
 rm "${IMAGE_DIR}/bash-static"
 rm "${IMAGE_DIR}/inferFile.sh"
 if [ -e "${IMAGE_DIR}/kernelInit" ]; then
@@ -99,7 +99,7 @@ fi
 
 echo "----Patching Filesystem (chroot)----"
 cp "${SCRIPT_DIR}/fixImage.sh" "${IMAGE_DIR}"
-FIRMSE_BOOT=${FIRMSE_BOOT} FIRMSE_ETC=${FIRMSE_ETC} chroot "${IMAGE_DIR}" /busybox ash /fixImage.sh
+FIRMAE_BOOT=${FIRMAE_BOOT} FIRMAE_ETC=${FIRMAE_ETC} chroot "${IMAGE_DIR}" /busybox ash /fixImage.sh
 rm "${IMAGE_DIR}/fixImage.sh"
 rm "${IMAGE_DIR}/busybox"
 
@@ -130,6 +130,30 @@ chmod a+x "${IMAGE_DIR}/firmadyne/debug.sh"
 cp ${BINARY_DIR}/hook.${ARCH}.so ${IMAGE_DIR}/firmadyne/hook.so
 cp ${SCRIPT_DIR}/KMhandler.sh ${IMAGE_DIR}/firmadyne/KMhandler.sh
 
+cd ${IMAGE_DIR}/lib
+
+if [ ! -e ${IMAGE_DIR}/lib/libc.so.0 ]&&[ ! -L ${IMAGE_DIR}/lib/libc.so.0 ]; then
+    ln -s libc.* libc.so.0 | true
+fi
+
+if [ ! -e ${IMAGE_DIR}/lib/libc.so.1 ]&&[ ! -L ${IMAGE_DIR}/lib/libc.so.1 ]; then
+    ln -s libc.so.0 libc.so.1 | true
+fi
+
+if [ ! -e ${IMAGE_DIR}/lib/libdl.so.0 ]&&[ ! -L ${IMAGE_DIR}/lib/libdl.so.0 ]; then
+    ln -s libdl.* libdl.so.0 | true
+fi
+
+if [ ! -e ${IMAGE_DIR}/lib/libdl.so.1 ]&&[ ! -L ${IMAGE_DIR}/lib/libdl.so.1 ]; then
+    ln -s libdl.so.0 libdl.so.1 | true
+fi
+
+if [ ! -e ${IMAGE_DIR}/lib/ld-uClibc.so.0 ]&&[ ! -L ${IMAGE_DIR}/lib/ld-uClibc.so.0 ]; then
+    ln -s ld-uClibc* ld-uClibc.so.0 | true
+fi
+
+cd -
+
 if [ -d ${WORK_DIR}/file_ko ]; then
     cp -r ${WORK_DIR}/file_ko ${IMAGE_DIR}/firmadyne/file_ko/
 else
@@ -154,7 +178,7 @@ else
     touch ${IMAGE_DIR}/firmadyne/md_list
 fi
 
-if (! ${FIRMSE_ETC}); then
+if (! ${FIRMAE_ETC}); then
   sed -i 's/sleep 60/sleep 15/g' "${IMAGE_DIR}/firmadyne/network.sh"
   sed -i 's/sleep 120/sleep 30/g' "${IMAGE_DIR}/firmadyne/run_service.sh"
   sed -i 's@/firmadyne/sh@/bin/sh@g' ${IMAGE_DIR}/firmadyne/{preInit.sh,network.sh,run_service.sh}

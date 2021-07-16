@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import r2pipe
 import json
+import os
 import re
 import sys
 import angr
@@ -50,7 +51,7 @@ def find_func_ref(r, func_offset):
             func_calling_addrs.append(int(hex(item['from']),16))
             
     if len(func_calling_addrs) == 0:
-        return -1
+        return []
 
     return func_calling_addrs
 
@@ -80,19 +81,22 @@ def static_analysis(file_name,device_name):
     # Find device name reference
     device_result = r.cmd('/j /dev/{}'.format(device_name))
     device_result_json = json.loads(device_result)
-    device_addr = 0
+    device_addrs = []
     for item in device_result_json:
         if '/dev/{}'.format(device_name) in item['data']:
-            device_addr = item['offset']
-    if device_addr == 0:
+            device_addrs.append(item['offset'])
+    print("device_addrs:",device_addrs)
+    if len(device_addrs) == 0:
         print("[*] device address not found!")
+        exit(1)
 
-    device_ref = r.cmd('axtj {}'.format(device_addr))
-    device_ref_json = json.loads(device_ref)
     device_ref = []
-    for item in device_ref_json:
-        if item['type'] == 'DATA':
-            device_ref.append(item['from'])
+    for device_addr in device_addrs:
+        device_ref_json = json.loads(r.cmd('axtj {}'.format(device_addr)))
+        for item in device_ref_json:
+            if item['type'] == 'DATA':
+                device_ref.append(item['from'])
+    print("device_ref:",device_ref)
     if len(device_ref) == 0:
         print("[*] device address not found!")
         exit(1)
@@ -385,9 +389,13 @@ def main(argv):
     print("\n-------------------------")
     print("[*]Config generating: " + device_name + '.config')
     print("rules:\t\t", rules)
-    with open("{}/{}.config".format(config_path, device_name),"a") as f:
-        for rule in rules:
-            f.write("{}\t{}\t{}\n".format(rule[0],rule[1],rule[2]))
+    if os.path.exists("{}/{}.config".format(config_path, device_name)):
+        f = open("{}/{}.config".format(config_path, device_name),"a")
+    else:
+        f = open("{}/{}.config".format(config_path, device_name),"w")
+    for rule in rules:
+        f.write("{}\t{}\t{}\n".format(rule[0],rule[1],rule[2]))
+    f.close()
 
 if __name__ == "__main__":
     main(sys.argv)

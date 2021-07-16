@@ -42,5 +42,7 @@ fi
 
 cp -r ${KERNEL_DIR}/${ARCH}/${KERNEL_VERSION}/kernel_module/file_ko ${WORK_DIR}
 cp -r ${KERNEL_DIR}/${ARCH}/${KERNEL_VERSION}/kernel_module/md_ko ${WORK_DIR}
-rm ${KERNEL_DIR}/${ARCH}/${KERNEL_VERSION}/kernel_module/file_ko/*
-rm ${KERNEL_DIR}/${ARCH}/${KERNEL_VERSION}/kernel_module/md_ko/*
+rm -r ${KERNEL_DIR}/${ARCH}/${KERNEL_VERSION}/kernel_module/file_ko/
+rm -r ${KERNEL_DIR}/${ARCH}/${KERNEL_VERSION}/kernel_module/md_ko/
+mkdir -p ${KERNEL_DIR}/${ARCH}/${KERNEL_VERSION}/kernel_module/file_ko/
+mkdir -p ${KERNEL_DIR}/${ARCH}/${KERNEL_VERSION}/kernel_module/md_ko/

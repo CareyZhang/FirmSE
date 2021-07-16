@@ -55,13 +55,4 @@ fi
 
 kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 2> /dev/null | true
 
-# Find missing device
-for md in `grep -oe "FirmSE: FOUND MD /dev/[A-Za-z0-9_]*" ${WORK_DIR}/qemu.final.serial.log | grep -oe "/dev/[A-Za-z0-9_]*" | cut -d "/" -f3`
-do
-  if `md_filter $md`; then
-    echo $md >> ${WORK_DIR}/md_list
-  fi
-done
-cat ${WORK_DIR}/md_list | sort | uniq > ${WORK_DIR}/md_list
-
 sleep 2

@@ -54,4 +54,4 @@ COPY yaffshiv /usr/local/bin/
 COPY unstuff /usr/local/bin/
 
 ENV USER=root
-ENV FIRMSE_DOCKER=true
+ENV FIRMAE_DOCKER=true

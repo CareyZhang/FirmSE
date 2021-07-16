@@ -2,7 +2,7 @@ BUSYBOX="/busybox"
 
 ${BUSYBOX} touch /firmadyne/init
 
-if (${FIRMSE_BOOT}); then
+if (${FIRMAE_BOOT}); then
   arr=()
   if [ -e /kernelInit ]; then
     for FILE in `${BUSYBOX} strings ./kernelInit`
@@ -47,7 +47,7 @@ fi
 
 ${BUSYBOX} echo '/firmadyne/preInit.sh' >> /firmadyne/init
 
-if (${FIRMSE_ETC}); then
+if (${FIRMAE_ETC}); then
     if [ -e /etc/init.d/uhttpd ]; then
         echo -n "/etc/init.d/uhttpd start" > /firmadyne/service
         echo -n "uhttpd" > /firmadyne/service_name

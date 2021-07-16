@@ -55,7 +55,7 @@ def get_brand(infile, psql_ip):
         return ""
 
 def db_select(column,iid):
-    if os.getenv('FIRMSE_DOCKER') == 'true':
+    if os.getenv('FIRMAE_DOCKER') == 'true':
         psql_ip = "172.17.0.1"
     else:
         psql_ip = "127.0.0.1"
@@ -73,7 +73,7 @@ def db_select(column,iid):
         exit
 
 def db_update(column,value,iid):
-    if os.getenv('FIRMSE_DOCKER') == 'true':
+    if os.getenv('FIRMAE_DOCKER') == 'true':
         psql_ip = "172.17.0.1"
     else:
         psql_ip = "127.0.0.1"

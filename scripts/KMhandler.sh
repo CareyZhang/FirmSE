@@ -1,17 +1,20 @@
 #!/bin/sh
-###################################################
-###	Bring up kernel module and device	###
-###################################################
+
+echo "[*] FirmSE: Kernel module insertion."
 
 BUSYBOX=/firmadyne/busybox
 
+echo "[-] /proc kernel module"
 for module in `ls /firmadyne/file_ko`
 do
+    echo "> $module"
     ${BUSYBOX} insmod "/firmadyne/file_ko/$module"
 done
 
+echo "[-] /dev kernel module"
 for dev in `cat /firmadyne/md_list`
 do
+	echo "> ${dev}.ko"
 	${BUSYBOX} insmod "/firmadyne/md_ko/$dev.ko"
 	major_id=`cat /proc/devices | grep $dev | awk '{print $1}'`
 	if [ -f "/dev/${dev}" ]; then

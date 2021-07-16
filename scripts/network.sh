@@ -1,9 +1,11 @@
 #!/firmadyne/sh
 
+echo "[*] FirmSE: Setting Network."
+
 BUSYBOX=/firmadyne/busybox
 ACTION=`${BUSYBOX} cat /firmadyne/network_type`
 
-if (${FIRMSE_NETWORK}); then
+if (${FIRMAE_NETWORK}); then
   ${BUSYBOX} sleep 10
 
   if [ ${ACTION} == "default" ]; then

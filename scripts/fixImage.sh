@@ -10,7 +10,7 @@ resolve_link() {
     echo "$TARGET"
 }
 
-if (${FIRMSE_BOOT}); then
+if (${FIRMAE_BOOT}); then
   if [ ! -e /bin/sh ]; then
       ${BUSYBOX} ln -s /firmadyne/busybox /bin/sh
   fi
@@ -71,7 +71,7 @@ FILECOUNT="$($BUSYBOX find /dev -maxdepth 1 -type b -o -type c -print | $BUSYBOX
 if [ $FILECOUNT -lt "5" ]; then
     echo "Warning: Recreating device nodes!"
 
-    if (${FIRMSE_ETC}); then
+    if (${FIRMAE_ETC}); then
       TMP_BUSYBOX="/busybox"
     else
       TMP_BUSYBOX=""
@@ -172,7 +172,7 @@ if ($BUSYBOX grep -sq "/dev/gpio/in" /bin/gpio) ||
   ($BUSYBOX grep -sq "/dev/gpio/in" /usr/lib/libcm.so) ||
   ($BUSYBOX grep -sq "/dev/gpio/in" /usr/lib/libshared.so); then
     echo "Creating /dev/gpio/in!"
-    if (${FIRMSE_BOOT}); then
+    if (${FIRMAE_BOOT}); then
       rm /dev/gpio
     fi
     mkdir -p /dev/gpio
@@ -180,7 +180,7 @@ if ($BUSYBOX grep -sq "/dev/gpio/in" /bin/gpio) ||
 fi
 
 # prevent system from rebooting
-if (${FIRMSE_BOOT}); then
+if (${FIRMAE_BOOT}); then
   echo "Removing /sbin/reboot!"
   rm -f /sbin/reboot
 fi

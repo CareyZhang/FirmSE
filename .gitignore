@@ -1,5 +1,5 @@
 *.o
-binaries/
+firmwares/
 images/
 scratch/
-sources/**
+sources/

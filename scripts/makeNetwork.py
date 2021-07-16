@@ -86,10 +86,10 @@ del_partition ${DEVICE:0:$((${#DEVICE}-2))}
 %(START_NET)s
 
 echo -n "Starting emulation of firmware... "
-if [ ${QEMU_MACHINE} == *"vexpress-a9"* ]; then
+if [[ ${QEMU_MACHINE} == *"vexpress-a9"* ]]; then
     %(QEMU_ENV_VARS)s ${QEMU} -m 256 -M ${QEMU_MACHINE} -kernel ${KERNEL} \\
         -drive if=sd,driver=file,filename=${IMAGE} \\
-        -append "root=${QEMU_ROOTFS} console=ttyS0 nandsim.parts=64,64,64,64,64,64,64,64,64,64 %(QEMU_INIT)s rw debug print-fatal-signals=1 FIRMSE_NETWORK=${FIRMSE_NETWORK} FIRMSE_NVRAM=${FIRMSE_NVRAM} FIRMSE_KERNEL=${FIRMSE_KERNEL} FIRMSE_ETC=${FIRMSE_ETC} ${QEMU_DEBUG}" \\
+        -append "root=${QEMU_ROOTFS} console=ttyS0 nandsim.parts=64,64,64,64,64,64,64,64,64,64 %(QEMU_INIT)s rw debug print-fatal-signals=1 FIRMAE_NETWORK=${FIRMAE_NETWORK} FIRMAE_NVRAM=${FIRMAE_NVRAM} FIRMAE_KERNEL=${FIRMAE_KERNEL} FIRMAE_ETC=${FIRMAE_ETC} ${QEMU_DEBUG}" \\
         -serial file:${WORK_DIR}/qemu.final.serial.log \\
         -serial unix:/tmp/qemu.${IID}.S1,server,nowait \\
         -monitor unix:/tmp/qemu.${IID},server,nowait \\
@@ -97,7 +97,7 @@ if [ ${QEMU_MACHINE} == *"vexpress-a9"* ]; then
         -net nic,model=lan9118,vlan=0 -net tap,ifname=${TAPDEV_0},vlan=0,script=no | true
 else
     %(QEMU_ENV_VARS)s ${QEMU} ${QEMU_BOOT} -m 1024 -M ${QEMU_MACHINE} -kernel ${KERNEL} \\
-        %(QEMU_DISK)s -append "root=${QEMU_ROOTFS} console=ttyS0 nandsim.parts=64,64,64,64,64,64,64,64,64,64 %(QEMU_INIT)s rw debug ignore_loglevel print-fatal-signals=1 FIRMSE_NETWORK=${FIRMSE_NETWORK} FIRMSE_NVRAM=${FIRMSE_NVRAM} FIRMSE_KERNEL=${FIRMSE_KERNEL} FIRMSE_ETC=${FIRMSE_ETC} ${QEMU_DEBUG}" \\
+        %(QEMU_DISK)s -append "root=${QEMU_ROOTFS} console=ttyS0 nandsim.parts=64,64,64,64,64,64,64,64,64,64 %(QEMU_INIT)s rw debug ignore_loglevel print-fatal-signals=1 FIRMAE_NETWORK=${FIRMAE_NETWORK} FIRMAE_NVRAM=${FIRMAE_NVRAM} FIRMAE_KERNEL=${FIRMAE_KERNEL} FIRMAE_ETC=${FIRMAE_ETC} ${QEMU_DEBUG}" \\
         -serial file:${WORK_DIR}/qemu.final.serial.log \\
         -serial unix:/tmp/qemu.${IID}.S1,server,nowait \\
         -monitor unix:/tmp/qemu.${IID},server,nowait \\
@@ -132,6 +132,17 @@ def stripTimestamps(data):
     prog = re.compile(b"^\[[^\]]*\] firmadyne: ")
     lines = [prog.sub(b"", l) for l in lines]
     return lines
+
+def findMDs(data):
+    result = []
+    rule = b"FirmSE: FOUND MD /dev/[A-Za-z0-9_]*"
+    # candidates = filter(lambda l: "FirmSE: FOUND MD /dev/" in l, lines)
+    candidates = list(set(re.findall(rule,data)))
+    candidates = [d.decode("utf-8") for d in candidates]
+    for c in candidates:
+        md_name = c.split("/")[-1]
+        result.append(str(md_name))
+    return result
 
 def findMacChanges(data, endianness):
     lines = stripTimestamps(data)
@@ -272,7 +283,7 @@ def qemuNetworkConfig(arch, network, isUserNetwork, ports):
     output = []
     assigned = []
     interfaceNum = 4
-    if arch == "arm" and checkVariable("FIRMSE_NETWORK"):
+    if arch == "arm" and checkVariable("FIRMAE_NETWORK"):
         interfaceNum = 1
 
     for i in range(0, interfaceNum):
@@ -336,7 +347,7 @@ echo "Creating TAP device ${TAPDEV_%(I)i}..."
 sudo tunctl -t ${TAPDEV_%(I)i} -u ${USER}
 """
 
-    if checkVariable("FIRMSE_NETWORK"):
+    if checkVariable("FIRMAE_NETWORK"):
         template_vlan = """
 echo "Initializing VLAN..."
 HOSTNETDEV_%(I)i=${TAPDEV_%(I)i}.%(VLANID)i
@@ -461,7 +472,7 @@ def getNetworkList(data, ifacesWithIps, macChanges):
             if config not in networkList:
                 networkList.append(config)
 
-    if checkVariable("FIRMSE_NETWORK"):
+    if checkVariable("FIRMAE_NETWORK"):
         return networkList
     else:
         ips = set()
@@ -504,7 +515,7 @@ def inferNetwork(iid, arch, endianness, init):
     with open(targetDir + '/image/firmadyne/network_type', 'w') as out:
         out.write("None")
 
-    qemuInitValue = 'rdinit=/firmadyne/preInit.sh LD_PRELOAD=/firmadyne/hook.so'
+    qemuInitValue = 'rdinit=/firmadyne/preInit.sh'
     if os.path.exists(targetDir + '/service'):
         webService = open(targetDir + '/service').read().strip()
     else:
@@ -526,10 +537,11 @@ def inferNetwork(iid, arch, endianness, init):
             out = open(targetFile, 'a')
             out.write(init + ' &\n')
     else: # preInit.sh
+        qemuInitValue = qemuInitValue[2:] # remove 'rd'
         out = open(targetDir + '/image/firmadyne/preInit.sh', 'a')
 
     if out:
-        out.write('\n/firmadyne/network.sh &\n')
+        out.write('/firmadyne/network.sh &\n')
         out.write('/firmadyne/run_service.sh &\n')
         out.write('/firmadyne/debug.sh\n')
         # trendnet TEW-828DRU_1.0.7.2, etc...
@@ -558,6 +570,8 @@ def inferNetwork(iid, arch, endianness, init):
 
     ports = findPorts(data, endianness)
 
+    MDs = findMDs(data)
+
     #find interfaces with non loopback ip addresses
     ifacesWithIps = findNonLoInterfaces(data, endianness)
     #find changes of mac addresses for devices
@@ -565,14 +579,14 @@ def inferNetwork(iid, arch, endianness, init):
     print('[*] Interfaces: %r' % ifacesWithIps)
 
     networkList = getNetworkList(data, ifacesWithIps, macChanges)
-    return qemuInitValue, networkList, targetFile, targetData, ports
+    return qemuInitValue, networkList, targetFile, targetData, ports, MDs
 
 def checkNetwork(networkList):
     filterNetworkList = []
     devList = ["eth0", "eth1", "eth2", "eth3"]
     result = "None"
 
-    if checkVariable("FIRMSE_NETWORK"):
+    if checkVariable("FIRMAE_NETWORK"):
         devs = [dev for (ip, dev, vlan, mac, brif) in networkList]
         devs = set(devs)
         ips = [ip for (ip, dev, vlan, mac, brif) in networkList]
@@ -637,7 +651,7 @@ def checkNetwork(networkList):
             print("[*] no network interface: bring up default network")
             filterNetworkList.append(('192.168.0.1', 'eth0', None, None, "br0"))
             result = "default"
-    else: # if checkVariable("FIRMSE_NETWORK"):
+    else: # if checkVariable("FIRMAE_NETWORK"):
         filterNetworkList = networkList
 
     return filterNetworkList, result # (network_type)
@@ -647,12 +661,13 @@ def process(iid, arch, endianness, makeQemuCmd=False, outfile=None):
 
     global SCRIPTDIR
     global SCRATCHDIR
-
+    
+    md_list = []
     for init in open(SCRATCHDIR + "/" + str(iid) + "/init").read().split('\n')[:-1]:
         with open(SCRATCHDIR + "/" + str(iid) + "/current_init", 'w') as out:
             out.write(init)
-        qemuInitValue, networkList, targetFile, targetData, ports = inferNetwork(iid, arch, endianness, init)
-
+        qemuInitValue, networkList, targetFile, targetData, ports, MDs = inferNetwork(iid, arch, endianness, init)
+        md_list = md_list + MDs
         print("[*] ports: %r" % ports)
         # check network interfaces and add script in the file system
         # return the fixed network interface
@@ -698,6 +713,20 @@ def process(iid, arch, endianness, makeQemuCmd=False, outfile=None):
             os.chmod(outfile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
             os.system('./scripts/test_emulation.sh {} {}'.format(iid, arch + endianness))
+            data = open(SCRATCHDIR + "/" + str(iid) + "/qemu.final.serial.log", 'rb').read()
+            MDs = findMDs(data)
+            orig_md_list = []
+            if os.path.exists(SCRATCHDIR + "/" + str(iid) + "/md_list"):
+                orig_md_list = open(SCRATCHDIR + "/" + str(iid) + "/md_list", 'r').read().split("\n")
+            md_list = list(set(md_list + MDs + orig_md_list))
+            if md_list != []:
+                print("[*] md_list:", md_list, "\n")
+                with open(SCRATCHDIR + "/" + str(iid) + "/md_list",'w') as f:
+                    for md in md_list:
+                        if len(md) > 1:
+                            f.write("{}\n".format(md))
+            else:
+                print("[*] Not found missing dev.\n")
 
             if (os.path.exists(SCRATCHDIR + '/' + str(iid) + '/web') and
                 open(SCRATCHDIR + '/' + str(iid) + '/web').read().strip() == 'true'):
