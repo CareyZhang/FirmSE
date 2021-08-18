@@ -1,0 +1,3 @@
+[submodule "sources/Auto_Build_LKM"]
+	path = sources/Auto_Build_LKM
+	url = https://github.com/CareyZhang/Auto_Build_LKM.git
